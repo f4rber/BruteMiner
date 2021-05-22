@@ -1,0 +1,6 @@
+censys==1.1.1
+shodan==1.25.0
+pysocks
+requests
+datetime
+argparse
