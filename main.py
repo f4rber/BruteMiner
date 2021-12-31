@@ -444,7 +444,7 @@ def censys_scanner(dork):
     """
     try:
         h = CensysHosts(api_id=censys_api_key, api_secret=censys_api_secret)
-        results = h.search(query=dork, pages=-1)
+        results = h.search(query=dork, pages=3)
         for result in results.view_all():
             res = json.dumps(result, indent=4)
             r = json.loads(result)
