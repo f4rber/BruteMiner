@@ -10,7 +10,7 @@ import datetime
 import argparse
 import threading
 from queue import Queue
-from censys import ipv4
+from censys.search import SearchClient, CensysHosts
 from multiprocessing import Pool, freeze_support, Manager
 
 info = """
@@ -47,10 +47,9 @@ ua = ['Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; zh-cn) Opera 8.65',
 
 standard_users = ["admin", "Admin", "web", "root", "innominer", "innot1t2", "miner", "inno", "administrator", "user"]
 
-shodan_api_key = "SHODAN_KEY"
-
-censys_api_key = "CENSYS_KEY"
-censys_api_secret = "CENSYS_SECRET"
+shodan_api_key = "KEY"
+censys_api_key = "KEY"
+censys_api_secret = "SECRET"
 
 
 # Generate headers
@@ -421,38 +420,38 @@ def awesomeminer_admin_web_pass_brute(url):
 
 
 # Shodan
-def shodan_scanner(dork, start=1, stop=2):
+def shodan_scanner(query, limit=50):
     """
     Save results from shodan.io to ip_list
     """
-    api = shodan.Shodan(shodan_api_key)
-    for page in range(start, stop):
-        try:
-            time.sleep(0.5)
-            results = api.search(dork, page=page)
-            for result in results['matches']:
-                if not result['ip_str'] in ip_list:
-                    ip_list.append(result['ip_str'])
-                    print(result['ip_str'])
-        except shodan.exception.APIError as error:
-            print('[!] Error: ' + str(error))
-            continue
+    try:
+        shodan_api = shodan.Shodan(shodan_api_key)
+        results = shodan_api.search(query, limit=limit)
+        print(f"Results found: {results['total']}")
+        for result in results['matches']:
+            if not result['ip_str'] in ip_list:
+                ip_list.append(result['ip_str'])
+                print(result['ip_str'])
+    except shodan.APIError as e:
+        print(f'[!] Error: {str(e)}')
+
 
 
 # Censys
-def censys_scanner(dork, records=25):
+def censys_scanner(dork):
     """
     Save results from censys.io to ip_list
     """
-    c = ipv4.CensysIPv4(api_id=censys_api_key, api_secret=censys_api_secret)
     try:
-        for result in c.search(dork, max_records=records):
+        h = CensysHosts(api_id=censys_api_key, api_secret=censys_api_secret)
+        results = h.search(query=dork, pages=-1)
+        for result in results.view_all():
             res = json.dumps(result, indent=4)
-            r = json.loads(res)
+            r = json.loads(result)
             if r["ip"] not in ip_list:
                 ip_list.append(r["ip"])
                 print(r["ip"])
-    except censys.exceptions as error:
+    except Exception as error:
         print('[!] Error: ' + str(error))
 
 
@@ -508,15 +507,15 @@ if __name__ == "__main__":
             results_file = r'logs/' + date + '.txt'
             if miner_type.lower() == "asic":
                 print("\nCensys:")
-                censys_scanner("AsicMiner", records=40)
+                censys_scanner("AsicMiner")
                 print("\nShodan:")
-                shodan_scanner("title:AsicMiner", stop=3)
+                shodan_scanner("title:AsicMiner")
 
             elif miner_type.lower() == "awesome":
                 print("\nCensys:")
-                censys_scanner("80.http.get.body: Awesome Miner", records=40)
+                censys_scanner("80.http.get.body: Awesome Miner")
                 print("\nShodan:")
-                shodan_scanner("Awesome Miner", stop=3)
+                shodan_scanner("Awesome Miner")
 
             f = open(results_file, "a")
             for ip in ip_list:
