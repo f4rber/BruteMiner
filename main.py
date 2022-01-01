@@ -445,12 +445,12 @@ def censys_scanner(dork):
         h = CensysHosts(api_id=censys_api_key, api_secret=censys_api_secret)
         print(h.quota())
         results = h.search(query=dork, pages=1, per_page=10)
-        for result in results:
+        for result in results.view_all():
             res = json.dumps(result, indent=4)
             r = json.loads(res)
-            if r["ip"] not in ip_list:
-                ip_list.append(r["ip"])
-                print(r["ip"])
+            if r not in ip_list:
+                ip_list.append(r)
+                print(r)
     except Exception as error:
         print('[!] Error: ' + str(error))
 
