@@ -436,18 +436,18 @@ def shodan_scanner(query, limit=50):
         print(f'[!] Error: {str(e)}')
 
 
-
 # Censys
 def censys_scanner(dork):
     """
     Save results from censys.io to ip_list
     """
     try:
-        h = CensysHosts(api_id=censys_api_key, api_secret=censys_api_secret)
-        results = h.search(query=dork, pages=3)
-        for result in results.view_all():
-            res = json.dumps(result, indent=4)
-            r = json.loads(result)
+        h = CensysHosts(censys_api_id=censys_api_key, censys_api_secret=censys_api_secret)
+        print(h.quota())
+        results = h.search(query=dork, pages=1)
+        for result in results:
+            res = json.dumps(result[0], indent=4)
+            r = json.loads(res)
             if r["ip"] not in ip_list:
                 ip_list.append(r["ip"])
                 print(r["ip"])
