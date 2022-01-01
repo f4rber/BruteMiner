@@ -444,9 +444,9 @@ def censys_scanner(dork):
     try:
         h = CensysHosts(censys_api_id=censys_api_key, censys_api_secret=censys_api_secret)
         print(h.quota())
-        results = h.search(query=dork, pages=1)
-        for result in results:
-            res = json.dumps(result[0], indent=4)
+        results = h.search(query=dork, pages=1, per_page=10)
+        for result in results.view_all():
+            res = json.dumps(result, indent=4)
             r = json.loads(res)
             if r["ip"] not in ip_list:
                 ip_list.append(r["ip"])
