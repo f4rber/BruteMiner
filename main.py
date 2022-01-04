@@ -3,7 +3,6 @@ import time
 import json
 import random
 import shodan
-import censys
 import socket
 import requests
 import datetime
@@ -12,6 +11,11 @@ import threading
 from queue import Queue
 from censys.search import SearchClient, CensysHosts
 from multiprocessing import Pool, freeze_support, Manager
+
+# Credentials
+SHODAN_API_KEY = "KEY"
+CENSYS_API_KEY = "KEY"
+CENSYS_API_SECRET = "SECRET"
 
 info = """
 [1] Find IP, check common ports, find AsicMiners/AwesomeMiners, brute admin account on 80 port;
@@ -46,11 +50,6 @@ ua = ['Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; zh-cn) Opera 8.65',
       'Mozilla/5.0 (Windows; U; Windows NT 6.1; zh-CN) AppleWebKit/533+ (KHTML, like Gecko)']
 
 standard_users = ["admin", "Admin", "web", "root", "innominer", "innot1t2", "miner", "inno", "administrator", "user"]
-
-shodan_api_key = "KEY"
-censys_api_key = "KEY"
-censys_api_secret = "SECRET"
-
 
 # Generate headers
 def headers_gen():
@@ -425,7 +424,7 @@ def shodan_scanner(query, limit=50):
     Save results from shodan.io to ip_list
     """
     try:
-        shodan_api = shodan.Shodan(shodan_api_key)
+        shodan_api = shodan.Shodan(SHODAN_API_KEY)
         results = shodan_api.search(query, limit=limit)
         print(f"Results found: {results['total']}")
         for result in results['matches']:
@@ -442,7 +441,7 @@ def censys_scanner(dork):
     Save results from censys.io to ip_list
     """
     try:
-        h = CensysHosts(api_id=censys_api_key, api_secret=censys_api_secret)
+        h = CensysHosts(api_id=CENSYS_API_KEY, api_secret=CENSYS_API_SECRET)
         print(h.quota())
         results = h.search(query=dork, pages=1, per_page=10)
         for result in results.view_all():
@@ -507,13 +506,13 @@ if __name__ == "__main__":
             results_file = r'logs/' + date + '.txt'
             if miner_type.lower() == "asic":
                 print("\nCensys:")
-                censys_scanner("AsicMiner")
+                censys_scanner('services.http.response.html_title: "AsicMiner"')
                 print("\nShodan:")
                 shodan_scanner("title:AsicMiner")
 
             elif miner_type.lower() == "awesome":
                 print("\nCensys:")
-                censys_scanner("80.http.get.body: Awesome Miner")
+                censys_scanner('services.http.response.body: "Awesome Miner"')
                 print("\nShodan:")
                 shodan_scanner("Awesome Miner")
 
